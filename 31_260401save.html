@@ -1374,7 +1374,7 @@ if (isSSpawning && !isGameEnded && !isPaused) {
     }
     // --- 修改：G 關、H 關，以及 BOSS L 幻影階段都會生成 J & K ---
     let isJKSpawning = (currentLevel === 'G') || 
-                       (currentLevel === 'H' && !bossActive && !isWarning) || 
+                       (currentLevel === 'H' && !bossActive && !isWarning && (timeLeft > 0)) || 
                        (enemies.some(e => e.type === 'L_BOSS' && e.isPhantom)); // 新增：偵測 L 幻影在場
 
     if (isJKSpawning && !isGameEnded && !isPaused) {
