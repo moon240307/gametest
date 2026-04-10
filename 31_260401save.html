@@ -744,7 +744,7 @@ function checkPlayerDeath() {
         return; // 當視窗開著時，阻斷後續所有按鍵（包括啟動遊戲）
     }
 
-    // --- 修改：按下 X 啟動遊戲並播放音樂 ---
+    // --- 修正：按下 X 啟動遊戲並播放音樂 ---
     if (isPaused && e.code === 'KeyX') {
         isPaused = false;
         let startNow = Date.now();
@@ -756,12 +756,10 @@ function checkPlayerDeath() {
         spawnTimerC = startNow;
         spawnTimerW = startTime; 
 
-        // --- 核心修正：啟動音樂判斷 ---
-        // 確保 B, D, F, H 這些 30 秒關卡在「開場」就播放關卡背景音樂
+        // --- 核心修正：確保 60 秒生存關卡也在開場就播音樂 ---
         if (currentLevel === 'A') {
             playBgm(bgm.levelA);
         } else if (currentLevel === 'B') {
-            // 強制在啟動時播放 levelB.mp3，而不是等 30 秒結束
             playBgm(bgm.levelB);
         } else if (currentLevel === 'C' || currentLevel === 'D') {
             playBgm(bgm.levelCD);
@@ -770,14 +768,15 @@ function checkPlayerDeath() {
         } else if (currentLevel === 'G' || currentLevel === 'H') {
             playBgm(bgm.levelG);
         } else if (currentLevel === 'I') {
-            playBgm(bgm.levelI);
+            // 確保關卡 I 啟動時立即播放 levelI.mp3
+            playBgm(bgm.levelI); 
         } else if (currentLevel === 'J') {
             playBgm(bgm.levelJ_Boss);
         }
         
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         return;
-		}
+    }
     // ------------------------------------
 
     if (isPaused || isGameEnded) return; // 暫停時不允許其他動作
