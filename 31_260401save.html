@@ -744,40 +744,39 @@ function checkPlayerDeath() {
         return; // 當視窗開著時，阻斷後續所有按鍵（包括啟動遊戲）
     }
 
-    // --- 新增：按下 X 啟動遊戲並播放音樂 ---
+    // --- 修改：按下 X 啟動遊戲並播放音樂 ---
     if (isPaused && e.code === 'KeyX') {
         isPaused = false;
         let startNow = Date.now();
         startTime = startNow; 
 
-        // 同步更新敵人生成計時器，避免一開場就瞬間噴出一堆怪
+        // 同步更新敵人生成計時器
         spawnTimerA = startNow; 
         spawnTimerB = startNow; 
         spawnTimerC = startNow;
-		spawnTimerW = startTime; // 同步啟動 W 計時
+        spawnTimerW = startTime; 
 
-	// --- 修正後的啟動音樂判斷 ---
-	if (currentLevel === 'A') {
-		playBgm(bgm.levelA);
-	} else if (currentLevel === 'B') {
-		playBgm(bgm.levelB);
-	} else if (currentLevel === 'C' || currentLevel === 'D') {
-		playBgm(bgm.levelCD);
-	} else if (currentLevel === 'E' || currentLevel === 'F') {
-		playBgm(bgm.levelE);
-	} else if (currentLevel === 'G' || currentLevel === 'H') {
-		playBgm(bgm.levelG);
-	} else if (currentLevel === 'I') {
-		playBgm(bgm.levelI); // 關卡 I 使用專屬音樂
-	} else if (currentLevel === 'J') {
-		// 關卡 J 一開始就會播 BOSS 音樂
-		playBgm(bgm.levelJ_Boss);
-	}
-	
-        // 如果你有使用 Web Audio API (發射子彈音效)，也順便啟動它
+        // --- 核心修正：啟動音樂判斷 ---
+        // 確保 B, D, F, H 這些 30 秒關卡在「開場」就播放關卡背景音樂
+        if (currentLevel === 'A') {
+            playBgm(bgm.levelA);
+        } else if (currentLevel === 'B') {
+            // 強制在啟動時播放 levelB.mp3，而不是等 30 秒結束
+            playBgm(bgm.levelB);
+        } else if (currentLevel === 'C' || currentLevel === 'D') {
+            playBgm(bgm.levelCD);
+        } else if (currentLevel === 'E' || currentLevel === 'F') {
+            playBgm(bgm.levelE);
+        } else if (currentLevel === 'G' || currentLevel === 'H') {
+            playBgm(bgm.levelG);
+        } else if (currentLevel === 'I') {
+            playBgm(bgm.levelI);
+        } else if (currentLevel === 'J') {
+            playBgm(bgm.levelJ_Boss);
+        }
+        
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         return;
-    }
     // ------------------------------------
 
     if (isPaused || isGameEnded) return; // 暫停時不允許其他動作
