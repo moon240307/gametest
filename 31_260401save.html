@@ -777,6 +777,7 @@ function checkPlayerDeath() {
         
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         return;
+		}
     // ------------------------------------
 
     if (isPaused || isGameEnded) return; // 暫停時不允許其他動作
