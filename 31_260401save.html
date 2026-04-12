@@ -350,7 +350,7 @@ const closeMenu = document.getElementById('close-menu');
 const savedStatus = localStorage.getItem('guardians_save');
 const levelStatus = savedStatus ? JSON.parse(savedStatus) : {
     'A': 2, 'B': 1, 'C': 1, 'D': 1, 'E': 1, 
-    'F': 1, 'G': 1, 'H': 1, 'I': 2, 'J': 1 
+    'F': 1, 'G': 1, 'H': 1, 'I': 1, 'J': 1 
 };
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1583,7 +1583,7 @@ if (isSSpawning && !isGameEnded && !isPaused) {
                 if (['D', 'X', 'G_BOSS', 'L_BOSS', 'R_BOSS'].includes(en.type) || en.isPhantom) {
                     damage = 3; 
                 } else if (en.type === 'E') {
-                    damage = 2; 
+                    damage = 3; 
                 }
                 
                 team[currentIdx].hp -= damage;
