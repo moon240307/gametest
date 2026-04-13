@@ -279,7 +279,7 @@ canvas {
             <div>
                 <p><strong>【核心操作】</strong><br>
                 方向鍵：移動角色<br>
-                X 鍵：普通攻擊 / 啟動遊戲<br>
+                空白鍵：普通攻擊 / 啟動遊戲<br>
                 1~4 鍵：切換守護者</p>
 				Q/W/E/R 鍵：施放角色技能
                 <p><strong>【角色技能 Q/W/E/R】</strong><br>
@@ -731,70 +731,62 @@ function checkPlayerDeath() {
     }
 
     window.addEventListener('keydown', e => {
-
-    // 如果說明視窗是開著的 (flex)，按任何鍵都無效，直到關閉視窗
-    if ((infoModal && infoModal.style.display === 'flex') || 
-        (menuModal && menuModal.style.display === 'flex')) {
-	
-        // 可選：按 ESC 鍵關閉所有視窗
-        if (e.code === 'Escape') {
-            infoModal.style.display = 'none';
-            menuModal.style.display = 'none';
+        // 1. 視窗阻斷：如果說明或選單視窗是開著的，按任何鍵都無效（除了 ESC）
+        if ((infoModal && infoModal.style.display === 'flex') || 
+            (menuModal && menuModal.style.display === 'flex')) {
+            if (e.code === 'Escape') {
+                infoModal.style.display = 'none';
+                menuModal.style.display = 'none';
+            }
+            return; 
         }
-        return; // 當視窗開著時，阻斷後續所有按鍵（包括啟動遊戲）
-    }
 
-    // --- 修正：按下 X 啟動遊戲並播放音樂 ---
-    if (isPaused && e.code === 'KeyX') {
-        isPaused = false;
-        let startNow = Date.now();
-        startTime = startNow; 
+        // 2. 空白鍵啟動遊戲：僅在暫停狀態下按空白鍵觸發
+        if (isPaused && e.code === 'Space') {
+            e.preventDefault(); // 防止空白鍵導致網頁跳動
+            isPaused = false;
+            let startNow = Date.now();
+            startTime = startNow; 
 
-        // 同步更新敵人生成計時器
-        spawnTimerA = startNow; 
-        spawnTimerB = startNow; 
-        spawnTimerC = startNow;
-        spawnTimerW = startTime; 
+            // 同步更新計時器
+            spawnTimerA = startNow; 
+            spawnTimerB = startNow; 
+            spawnTimerC = startNow;
+            spawnTimerW = startNow; 
 
-        // --- 核心修正：確保 60 秒生存關卡也在開場就播音樂 ---
-        if (currentLevel === 'A') {
-            playBgm(bgm.levelA);
-        } else if (currentLevel === 'B') {
-            playBgm(bgm.levelB);
-        } else if (currentLevel === 'C' || currentLevel === 'D') {
-            playBgm(bgm.levelCD);
-        } else if (currentLevel === 'E' || currentLevel === 'F') {
-            playBgm(bgm.levelE);
-        } else if (currentLevel === 'G' || currentLevel === 'H') {
-            playBgm(bgm.levelG);
-        } else if (currentLevel === 'I') {
-            // 確保關卡 I 啟動時立即播放 levelI.mp3
-            playBgm(bgm.levelI); 
-        } else if (currentLevel === 'J') {
-            playBgm(bgm.levelJ_Boss);
+            // 啟動音樂判斷
+            if (currentLevel === 'A') playBgm(bgm.levelA);
+            else if (currentLevel === 'B') playBgm(bgm.levelB);
+            else if (currentLevel === 'C' || currentLevel === 'D') playBgm(bgm.levelCD);
+            else if (currentLevel === 'E' || currentLevel === 'F') playBgm(bgm.levelE);
+            else if (currentLevel === 'G' || currentLevel === 'H') playBgm(bgm.levelG);
+            else if (currentLevel === 'I') playBgm(bgm.levelI);
+            else if (currentLevel === 'J') playBgm(bgm.levelJ_Boss);
+            
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            return;
         }
-        
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        return;
-    }
-    // ------------------------------------
 
-    if (isPaused || isGameEnded) return; // 暫停時不允許其他動作
-    keys[e.code] = true;
+        // 3. 遊戲進行中的按鍵處理
+        if (isPaused || isGameEnded) return;
 
-
-    // 第一次按鍵時啟動音樂
-    if (currentBgm && currentBgm.paused) {
-        currentBgm.play();
-    }
-        if (isGameEnded) return;
+        // 記錄按鍵狀態（包含方向鍵、空白鍵與大招鍵）
+        if (e.code === 'Space') e.preventDefault(); // 攻擊時防止網頁捲動
         keys[e.code] = true;
+
+        // 角色快速切換 (1~4)
         if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code)) {
             let nextIdx = parseInt(e.code.slice(-1)) - 1;
-            if (team[nextIdx] && team[nextIdx].hp > 0) { currentIdx = nextIdx; updateUI(); }
+            if (team[nextIdx] && team[nextIdx].hp > 0) { 
+                currentIdx = nextIdx; 
+                updateUI(); 
+            }
         }
-        // if (e.code === 'KeyX' && player.active) handleAttack();
-        team.forEach((char, idx) => { if (e.code === char.burstKey) triggerBurst(idx); });
+
+        // 觸發大招 (Q/W/E/R)
+        team.forEach((char, idx) => { 
+            if (e.code === char.burstKey) triggerBurst(idx); 
+        });
     });
     window.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -1454,8 +1446,10 @@ if (isSSpawning && !isGameEnded && !isPaused) {
         player.x = Math.max(200, Math.min(canvas.width - 50, player.x + (dx/len)*5));
         player.y = Math.max(50, Math.min(canvas.height - 200, player.y + (dy/len)*5));
     }
-    if (keys['KeyX'] && player.active) handleAttack();
-
+	// 在 updateLogic 函式內，處理玩家位移的邏輯下方加入：
+	if (keys['Space'] && player.active) {
+		handleAttack(); 
+	}
     // --- 5. 子彈位移與碰撞 (整合 BOSS L 與 單位 M 的反傷與免疫機制) ---
     bullets.forEach(b => {
         if (b.toRemove) return;
@@ -1999,7 +1993,7 @@ function draw() {
         ctx.fillText(`LEVEL ${currentLevel} READY`, canvas.width / 2, canvas.height / 2 - 40);
         ctx.fillStyle = "white";
         ctx.font = "24px sans-serif";
-        ctx.fillText("請按 [ X ] 鍵開始守護", canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText("請按 [ 空白鍵 ] 鍵開始守護", canvas.width / 2, canvas.height / 2 + 40);
         requestAnimationFrame(draw);
         return; 
     }
