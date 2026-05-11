@@ -1,0 +1,755 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #game {
+    width: 390px;
+    height: 844px;
+    background: #1a0a00;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Noto Sans TC', sans-serif;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+  }
+  #scene {
+    width: 100%;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #bg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  #character {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 210px;
+    opacity: 0;
+    transition: opacity 0.8s, transform 0.8s;
+    transform-origin: bottom center;
+  }
+  #character.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  #character.hidden-right {
+    opacity: 0;
+    transform: translateX(calc(-50% + 120px));
+  }
+  #character.enter-right {
+    transform: translateX(calc(-50% + 80px));
+    opacity: 0;
+  }
+
+  #namebox {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    background: rgba(120,60,10,0.92);
+    border: 1px solid #e8a84a;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fde9b0;
+    display: none;
+    letter-spacing: 1px;
+  }
+
+  #dialog-area {
+    width: 100%;
+    background: rgba(18,8,0,0.93);
+    border-top: 1.5px solid #8b4e0a;
+    padding: 0;
+    min-height: 170px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  #dialog-box {
+    padding: 14px 18px 10px;
+    min-height: 100px;
+    position: relative;
+  }
+  #dialog-text {
+    font-size: 15px;
+    color: #f5e6c8;
+    line-height: 1.7;
+    min-height: 70px;
+    letter-spacing: 0.3px;
+  }
+  #tap-hint {
+    position: absolute;
+    bottom: 6px;
+    right: 14px;
+    font-size: 11px;
+    color: #c8902a;
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  #choices {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 16px 14px;
+  }
+  .choice-btn {
+    background: rgba(120,60,10,0.5);
+    border: 1px solid #c8802a;
+    border-radius: 8px;
+    color: #fde9b0;
+    font-size: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
+    font-family: inherit;
+  }
+  .choice-btn:active { background: rgba(180,90,10,0.7); }
+
+  #cocktail-ui {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,4,0,0.97);
+    border-top: 1.5px solid #8b4e0a;
+    padding: 16px;
+    z-index: 20;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #cocktail-ui.show { display: flex; }
+  #cocktail-title {
+    font-size: 14px;
+    color: #e8a84a;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .ingredient-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ing-btn {
+    background: rgba(80,35,5,0.7);
+    border: 1px solid #a06020;
+    border-radius: 20px;
+    color: #f0d080;
+    font-size: 13px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .ing-btn.selected {
+    background: rgba(180,100,20,0.8);
+    border-color: #e8a84a;
+    color: #fff8e0;
+  }
+  #shake-btn {
+    background: linear-gradient(135deg, #8b3a00, #c06010);
+    border: none;
+    border-radius: 10px;
+    color: #fff8e0;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    display: none;
+  }
+  #cocktail-result {
+    display: none;
+    text-align: center;
+    font-size: 14px;
+    color: #fde9b0;
+    padding: 6px 0;
+  }
+  #close-cocktail {
+    display: none;
+    background: rgba(60,20,0,0.8);
+    border: 1px solid #6b3a0a;
+    border-radius: 8px;
+    color: #c8a060;
+    font-size: 13px;
+    padding: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  #recall-btn {
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: rgba(120,60,10,0.85);
+    border: 1px solid #e8a84a;
+    border-radius: 20px;
+    color: #fde9b0;
+    font-size: 13px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    z-index: 10;
+  }
+
+  #mixing-btn {
+    display: none;
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    background: rgba(120,60,10,0.85);
+    border: 1px solid #e8a84a;
+    border-radius: 20px;
+    color: #fde9b0;
+    font-size: 13px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    z-index: 10;
+  }
+
+  #top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+  }
+  #title-text {
+    font-size: 13px;
+    color: rgba(232,168,74,0.7);
+    letter-spacing: 2px;
+  }
+
+  .heart {
+    position: absolute;
+    font-size: 18px;
+    animation: floatUp 1.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 30;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+  }
+
+  #affection-bar {
+    position: absolute;
+    top: 50px;
+    right: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    z-index: 5;
+  }
+  #aff-label { font-size: 10px; color: rgba(232,168,74,0.6); letter-spacing: 1px; }
+  #aff-track {
+    width: 70px;
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  #aff-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c06020, #e8a84a);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.5s;
+  }
+</style>
+
+<div id="game">
+  <div id="scene">
+    <svg id="bg" viewBox="0 0 390 674" xmlns="http://www.w3.org/2000/svg">
+      <rect width="390" height="674" fill="#1a0a00"/>
+      <rect x="0" y="400" width="390" height="274" fill="#120600"/>
+      <rect x="0" y="380" width="390" height="30" fill="#2a1200" rx="2"/>
+      <!-- bar counter -->
+      <rect x="0" y="400" width="390" height="15" fill="#3d1e00"/>
+      <rect x="0" y="415" width="390" height="8" fill="#2a1200"/>
+      <!-- shelves background -->
+      <rect x="20" y="60" width="350" height="320" fill="#1f0e00" rx="4"/>
+      <!-- shelf lines -->
+      <rect x="20" y="60" width="350" height="6" fill="#3a1a00" rx="2"/>
+      <rect x="20" y="170" width="350" height="6" fill="#3a1a00" rx="2"/>
+      <rect x="20" y="280" width="350" height="6" fill="#3a1a00" rx="2"/>
+      <!-- bottles row 1 -->
+      <rect x="40" y="70" width="18" height="96" fill="#1a3a5c" rx="3"/>
+      <rect x="40" y="70" width="18" height="20" fill="#2a5a8c" rx="3"/>
+      <rect x="68" y="80" width="14" height="86" fill="#5c1a2a" rx="3"/>
+      <rect x="68" y="80" width="14" height="16" fill="#8c2a3a" rx="3"/>
+      <rect x="90" y="72" width="16" height="94" fill="#2a4a1a" rx="3"/>
+      <rect x="90" y="72" width="16" height="18" fill="#3a6a28" rx="3"/>
+      <rect x="115" y="82" width="14" height="84" fill="#4a3a10" rx="3"/>
+      <rect x="115" y="82" width="14" height="15" fill="#7a5a18" rx="3"/>
+      <rect x="136" y="75" width="18" height="91" fill="#3a1060" rx="3"/>
+      <rect x="136" y="75" width="18" height="18" fill="#6020a0" rx="3"/>
+      <rect x="164" y="78" width="14" height="88" fill="#601a10" rx="3"/>
+      <rect x="200" y="70" width="16" height="96" fill="#104040" rx="3"/>
+      <rect x="200" y="70" width="16" height="20" fill="#187070" rx="3"/>
+      <rect x="225" y="80" width="15" height="86" fill="#401010" rx="3"/>
+      <rect x="248" y="74" width="18" height="92" fill="#1a2060" rx="3"/>
+      <rect x="280" y="80" width="14" height="86" fill="#3a2a08" rx="3"/>
+      <rect x="302" y="72" width="16" height="94" fill="#1a3030" rx="3"/>
+      <rect x="326" y="76" width="15" height="90" fill="#402010" rx="3"/>
+      <rect x="350" y="82" width="14" height="84" fill="#201a40" rx="3"/>
+      <!-- bottles row 2 -->
+      <rect x="35" y="180" width="16" height="86" fill="#2a1a60" rx="3"/>
+      <rect x="60" y="185" width="14" height="81" fill="#1a3a20" rx="3"/>
+      <rect x="82" y="178" width="18" height="88" fill="#5a1a10" rx="3"/>
+      <rect x="110" y="183" width="15" height="83" fill="#40300a" rx="3"/>
+      <rect x="134" y="180" width="16" height="86" fill="#104040" rx="3"/>
+      <rect x="160" y="185" width="14" height="81" fill="#3a1030" rx="3"/>
+      <rect x="184" y="178" width="18" height="88" fill="#0a2a4a" rx="3"/>
+      <rect x="212" y="183" width="14" height="83" fill="#2a2a10" rx="3"/>
+      <rect x="234" y="180" width="16" height="86" fill="#3a1060" rx="3"/>
+      <rect x="260" y="185" width="15" height="81" fill="#1a4020" rx="3"/>
+      <rect x="284" y="178" width="14" height="88" fill="#501010" rx="3"/>
+      <rect x="306" y="183" width="16" height="83" fill="#102030" rx="3"/>
+      <rect x="330" y="180" width="15" height="86" fill="#3a2010" rx="3"/>
+      <rect x="354" y="185" width="16" height="81" fill="#201040" rx="3"/>
+      <!-- lanterns -->
+      <ellipse cx="100" cy="30" rx="16" ry="20" fill="#c02010" opacity="0.9"/>
+      <rect x="98" y="10" width="4" height="12" fill="#8b4e0a"/>
+      <ellipse cx="100" cy="30" rx="12" ry="16" fill="#e04020" opacity="0.5"/>
+      <line x1="100" y1="50" x2="100" y2="58" stroke="#8b4e0a" stroke-width="2"/>
+      <ellipse cx="290" cy="30" rx="16" ry="20" fill="#c02010" opacity="0.9"/>
+      <rect x="288" y="10" width="4" height="12" fill="#8b4e0a"/>
+      <ellipse cx="290" cy="30" rx="12" ry="16" fill="#e04020" opacity="0.5"/>
+      <line x1="290" y1="50" x2="290" y2="58" stroke="#8b4e0a" stroke-width="2"/>
+      <!-- bar surface reflection -->
+      <rect x="0" y="400" width="390" height="3" fill="rgba(200,130,30,0.3)"/>
+      <!-- glasses on bar -->
+      <rect x="40" y="370" width="20" height="30" fill="rgba(150,220,255,0.15)" rx="2"/>
+      <rect x="42" y="368" width="16" height="4" fill="rgba(150,220,255,0.25)" rx="1"/>
+      <rect x="340" y="365" width="22" height="35" fill="rgba(150,220,255,0.12)" rx="2"/>
+      <rect x="342" y="363" width="18" height="4" fill="rgba(150,220,255,0.22)" rx="1"/>
+      <!-- ambient light glow from lanterns -->
+      <ellipse cx="100" cy="80" rx="60" ry="40" fill="rgba(200,80,20,0.06)"/>
+      <ellipse cx="290" cy="80" rx="60" ry="40" fill="rgba(200,80,20,0.06)"/>
+      <!-- floor/stool hints -->
+      <ellipse cx="195" cy="415" rx="80" ry="8" fill="rgba(40,15,0,0.6)"/>
+    </svg>
+
+    <!-- Character SVG (wolf beastman) -->
+    <svg id="character" viewBox="0 0 210 420" xmlns="http://www.w3.org/2000/svg">
+      <!-- body / suit -->
+      <rect x="55" y="200" width="100" height="160" fill="#1a1a2a" rx="10"/>
+      <!-- shirt -->
+      <rect x="75" y="200" width="60" height="80" fill="#e8d8b0" rx="4"/>
+      <!-- tie -->
+      <polygon points="105,205 100,220 105,240 110,220" fill="#8b1a1a"/>
+      <!-- jacket lapels -->
+      <polygon points="75,200 55,200 55,240 90,220" fill="#252535"/>
+      <polygon points="135,200 155,200 155,240 120,220" fill="#252535"/>
+      <!-- arms -->
+      <rect x="25" y="205" width="32" height="90" fill="#1a1a2a" rx="10"/>
+      <rect x="153" y="205" width="32" height="90" fill="#1a1a2a" rx="10"/>
+      <!-- hands (paw) -->
+      <ellipse cx="41" cy="298" rx="16" ry="13" fill="#c8a878"/>
+      <ellipse cx="169" cy="298" rx="16" ry="13" fill="#c8a878"/>
+      <!-- neck -->
+      <rect x="88" y="170" width="34" height="36" fill="#c8a878" rx="6"/>
+      <!-- head -->
+      <ellipse cx="105" cy="148" rx="52" ry="50" fill="#c8a878"/>
+      <!-- wolf ears -->
+      <polygon points="65,110 50,55 90,100" fill="#c8a878"/>
+      <polygon points="68,108 56,68 88,102" fill="#d4a0a0"/>
+      <polygon points="145,110 160,55 120,100" fill="#c8a878"/>
+      <polygon points="142,108 154,68 122,102" fill="#d4a0a0"/>
+      <!-- snout -->
+      <ellipse cx="105" cy="162" rx="22" ry="16" fill="#d4b090"/>
+      <!-- nose -->
+      <ellipse cx="105" cy="154" rx="8" ry="6" fill="#2a1a1a"/>
+      <!-- eyes -->
+      <ellipse cx="86" cy="140" rx="9" ry="8" fill="#fff"/>
+      <ellipse cx="86" cy="140" rx="6" ry="6" fill="#3a6ab0"/>
+      <ellipse cx="86" cy="140" rx="3" ry="3" fill="#1a1a2a"/>
+      <ellipse cx="88" cy="138" rx="2" ry="2" fill="#fff" opacity="0.7"/>
+      <ellipse cx="124" cy="140" rx="9" ry="8" fill="#fff"/>
+      <ellipse cx="124" cy="140" rx="6" ry="6" fill="#3a6ab0"/>
+      <ellipse cx="124" cy="140" rx="3" ry="3" fill="#1a1a2a"/>
+      <ellipse cx="126" cy="138" rx="2" ry="2" fill="#fff" opacity="0.7"/>
+      <!-- brows -->
+      <path d="M78,132 Q86,128 94,132" stroke="#8b6040" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M116,132 Q124,128 132,132" stroke="#8b6040" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- mouth (slight smile) -->
+      <path d="M97,168 Q105,175 113,168" stroke="#8b5030" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- tail hint -->
+      <path d="M155,320 Q200,290 190,360" stroke="#c8a878" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="M155,320 Q200,290 190,360" stroke="#d4b898" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- hair tuft between ears -->
+      <ellipse cx="105" cy="100" rx="18" ry="14" fill="#a07850"/>
+      <!-- legs -->
+      <rect x="63" y="355" width="34" height="60" fill="#1a1a2a" rx="8"/>
+      <rect x="113" y="355" width="34" height="60" fill="#1a1a2a" rx="8"/>
+      <!-- shoes -->
+      <ellipse cx="80" cy="415" rx="20" ry="10" fill="#0a0a0a"/>
+      <ellipse cx="130" cy="415" rx="20" ry="10" fill="#0a0a0a"/>
+    </svg>
+
+    <div id="top-bar">
+      <span id="title-text">— 夜 の 居 酒 屋 —</span>
+    </div>
+    <div id="affection-bar">
+      <span id="aff-label">好感度</span>
+      <div id="aff-track"><div id="aff-fill"></div></div>
+    </div>
+    <div id="namebox"></div>
+    <button id="recall-btn" onclick="recallGuest()">📣 叫回他</button>
+    <button id="mixing-btn" onclick="openCocktail()">🍹 調酒台</button>
+  </div>
+
+  <div id="dialog-area">
+    <div id="dialog-box">
+      <div id="dialog-text">.....</div>
+      <span id="tap-hint">▼ 點擊繼續</span>
+    </div>
+    <div id="choices"></div>
+  </div>
+
+  <div id="cocktail-ui">
+    <div id="cocktail-title">🍹 調製一杯特調</div>
+    <div style="font-size:12px;color:#a07040;margin-bottom:4px;">選擇基酒</div>
+    <div class="ingredient-row" id="base-row"></div>
+    <div style="font-size:12px;color:#a07040;margin-top:6px;margin-bottom:4px;">選擇風味</div>
+    <div class="ingredient-row" id="flavor-row"></div>
+    <button id="shake-btn" onclick="shakeCocktail()">✨ 搖盪！</button>
+    <div id="cocktail-result"></div>
+    <button id="close-cocktail" onclick="closeCocktail()">完成，端上去</button>
+  </div>
+</div>
+
+<script>
+const char = document.getElementById('character');
+const dialogText = document.getElementById('dialog-text');
+const namebox = document.getElementById('namebox');
+const tapHint = document.getElementById('tap-hint');
+const choicesEl = document.getElementById('choices');
+const recallBtn = document.getElementById('recall-btn');
+const mixingBtn = document.getElementById('mixing-btn');
+const affFill = document.getElementById('aff-fill');
+
+let phase = 0;
+let lineIdx = 0;
+let affection = 0;
+let selectedBase = null, selectedFlavor = null;
+let cocktailMade = false;
+let isPhase4 = false;
+let typing = false;
+let typeTimer = null;
+
+function setAff(v) {
+  affection = Math.min(100, Math.max(0, v));
+  affFill.style.width = affection + '%';
+}
+
+const bases = ['威士忌', '琴酒', '伏特加', '蘭姆酒'];
+const flavors = ['荔枝', '柚子', '梅子', '薄荷'];
+
+const cocktailNames = {
+  '威士忌荔枝': '荔枝威士忌沙瓦',
+  '威士忌柚子': '柚子老友',
+  '威士忌梅子': '夜梅酸甜',
+  '威士忌薄荷': '煙燻薄荷曼哈頓',
+  '琴酒荔枝': '荔枝琴湯尼',
+  '琴酒柚子': '柚子柯林斯',
+  '琴酒梅子': '梅花馬丁尼',
+  '琴酒薄荷': '山林微風',
+  '伏特加荔枝': '荔枝玫瑰泡泡',
+  '伏特加柚子': '柚子海風',
+  '伏特加梅子': '紅梅戀',
+  '伏特加薄荷': '冰晶薄荷',
+  '蘭姆酒荔枝': '荔枝莫希托',
+  '蘭姆酒柚子': '熱帶柚子朋趣',
+  '蘭姆酒梅子': '梅子岡薩雷斯',
+  '蘭姆酒薄荷': '夜市薄荷莫希托',
+};
+
+const script1 = [
+  { speaker: '', text: '深夜的居酒屋，燈光昏黃，酒瓶在架上安靜地排列著。\n你正在擦拭著吧檯……' },
+  { speaker: '', text: '此時，門口傳來腳步聲。' },
+  { speaker: '凜', text: '……打擾了。' },
+  { speaker: '凜', text: '今晚還開著嗎？' },
+  { speaker: '你（酒保）', text: '當然。歡迎光臨，請隨意坐。' },
+  { speaker: '凜', text: '謝謝……這種時間還在的店，真的很少見呢。' },
+  { speaker: '凜', text: '工作剛結束，想喝一杯放鬆一下。' },
+  { speaker: '你（酒保）', text: '辛苦了。今晚想喝什麼？' },
+  { speaker: '凜', text: '嗯……能幫我調一杯特調嗎？隨你發揮。' },
+  { speaker: '', text: '他微微地勾起嘴角，目光落在吧檯上。', action: 'showMixing' },
+];
+
+const script2 = [
+  { speaker: '凜', text: '哇……這個顏色。' },
+  { speaker: '凜', text: '（輕啜一口）', action: 'addAff15' },
+  { speaker: '凜', text: '……好喝。真的很好喝。' },
+  { speaker: '凜', text: '你調的酒，有一種說不出來的溫度。' },
+  { speaker: '你（酒保）', text: '謝謝你這麼說。能讓你喜歡就好。' },
+  { speaker: '凜', text: '……我叫凜。以後可以常來嗎？', action: 'addAff10' },
+  { speaker: '你（酒保）', text: '隨時歡迎，凜先生。' },
+  { speaker: '凜', text: '（笑了笑）那就這樣說定了。\n……再次謝謝你，今晚。' },
+  { speaker: '', text: '他慢慢起身，整理了一下西裝，走向門口。' },
+  { speaker: '凜', text: '晚安。', action: 'leaveGuest' },
+];
+
+const script3 = [
+  { speaker: '凜', text: '……又是你。' },
+  { speaker: '凜', text: '我以為你已經關店了呢。' },
+  { speaker: '你（酒保）', text: '就是為了等你。' },
+  { speaker: '凜', text: '……（耳朵動了一下）', action: 'addAff10' },
+  { speaker: '凜', text: '你這個人，說話真不讓人防備。' },
+  { speaker: '凜', text: '……那，再給我一杯吧。不過這次換個口味。' },
+  { speaker: '', text: '他重新坐下，尾巴悄悄搖了搖。', action: 'showMixing' },
+];
+
+const script4 = [
+  { speaker: '凜', text: '（再次品嚐）……', action: 'addAff20' },
+  { speaker: '凜', text: '你每次調的都不一樣，但都剛好是我想要的。' },
+  { speaker: '你（酒保）', text: '因為我在看著你啊。' },
+  { speaker: '凜', text: '……（沉默片刻）', action: 'addAff15' },
+  { speaker: '凜', text: '……我不太習慣有人這樣說。' },
+  { speaker: '你（酒保）', text: '習慣就好。' },
+  { speaker: '凜', text: '（低笑）你真的……很麻煩。' },
+  { speaker: '凜', text: '但是……謝謝你。', action: 'addAff10' },
+  { speaker: '', text: '他再次起身，這次步伐放慢了許多。' },
+  { speaker: '凜', text: '……下次，我帶甜點來。', action: 'leaveGuest2' },
+];
+
+let currentScript = script1;
+
+function typeText(text, cb) {
+  typing = true;
+  tapHint.style.display = 'none';
+  dialogText.textContent = '';
+  let i = 0;
+  typeTimer = setInterval(() => {
+    dialogText.textContent += text[i];
+    i++;
+    if (i >= text.length) {
+      clearInterval(typeTimer);
+      typing = false;
+      tapHint.style.display = 'block';
+      if (cb) cb();
+    }
+  }, 28);
+}
+
+function showLine(line) {
+  choicesEl.style.display = 'none';
+  if (line.speaker && line.speaker !== '你（酒保）') {
+    namebox.style.display = 'block';
+    namebox.textContent = line.speaker === '' ? '' : line.speaker;
+  } else if (line.speaker === '你（酒保）') {
+    namebox.style.display = 'block';
+    namebox.textContent = '你';
+    namebox.style.background = 'rgba(30,60,100,0.92)';
+  } else {
+    namebox.style.display = 'none';
+    namebox.style.background = 'rgba(120,60,10,0.92)';
+  }
+  if (line.speaker !== '你（酒保）') namebox.style.background = 'rgba(120,60,10,0.92)';
+
+  typeText(line.text, () => {
+    if (line.action) handleAction(line.action);
+  });
+}
+
+function handleAction(action) {
+  if (action === 'showMixing') {
+    mixingBtn.style.display = 'block';
+  } else if (action === 'addAff15') {
+    setAff(affection + 15); spawnHearts();
+  } else if (action === 'addAff10') {
+    setAff(affection + 10); spawnHearts();
+  } else if (action === 'addAff20') {
+    setAff(affection + 20); spawnHearts();
+  } else if (action === 'leaveGuest') {
+    setTimeout(() => {
+      char.classList.remove('visible');
+      char.classList.add('hidden-right');
+      mixingBtn.style.display = 'none';
+      setTimeout(() => {
+        dialogText.textContent = '他走出了居酒屋的門。\n靜靜的夜，只剩下你和燈光。';
+        namebox.style.display = 'none';
+        tapHint.style.display = 'none';
+        recallBtn.style.display = 'block';
+        currentScript = null;
+      }, 900);
+    }, 600);
+  } else if (action === 'leaveGuest2') {
+    setTimeout(() => {
+      char.classList.remove('visible');
+      char.classList.add('hidden-right');
+      setTimeout(() => {
+        dialogText.textContent = '凜的身影消失在夜色中。\n那句「下次帶甜點來」，讓今晚變得特別。\n\n— DEMO 結束 —\n感謝體驗！';
+        namebox.style.display = 'none';
+        tapHint.style.display = 'none';
+        recallBtn.style.display = 'none';
+      }, 900);
+    }, 600);
+  }
+}
+
+function advance() {
+  if (typing) {
+    clearInterval(typeTimer);
+    typing = false;
+    tapHint.style.display = 'block';
+    dialogText.textContent = currentScript ? currentScript[lineIdx - 1]?.text || '' : dialogText.textContent;
+    if (currentScript && currentScript[lineIdx - 1]?.action) {
+      handleAction(currentScript[lineIdx - 1].action);
+    }
+    return;
+  }
+  if (!currentScript) return;
+  if (lineIdx >= currentScript.length) return;
+  const line = currentScript[lineIdx];
+  lineIdx++;
+  showLine(line);
+}
+
+document.getElementById('dialog-area').addEventListener('click', (e) => {
+  if (e.target.closest('#choices') || e.target.closest('#cocktail-ui')) return;
+  advance();
+});
+document.getElementById('scene').addEventListener('click', (e) => {
+  if (e.target.closest('#recall-btn') || e.target.closest('#mixing-btn') || e.target.closest('#cocktail-ui')) return;
+  advance();
+});
+
+function startGame() {
+  currentScript = script1;
+  lineIdx = 0;
+  setTimeout(() => {
+    char.classList.remove('hidden-right', 'enter-right', 'visible');
+    char.style.transform = 'translateX(calc(-50% + 80px))';
+    char.style.opacity = '0';
+    char.offsetHeight;
+    requestAnimationFrame(() => {
+      char.style.transition = 'opacity 0.9s, transform 0.9s';
+      char.style.transform = 'translateX(-50%)';
+      char.style.opacity = '1';
+    });
+    setTimeout(() => {
+      advance();
+    }, 1000);
+  }, 1200);
+  showLine({ speaker: '', text: '深夜の居酒屋。燈光昏黃，酒香飄散……' });
+}
+
+function recallGuest() {
+  recallBtn.style.display = 'none';
+  dialogText.textContent = '你走到門口，輕聲叫住了那道身影。';
+  namebox.style.display = 'none';
+  tapHint.style.display = 'none';
+  isPhase4 = true;
+  setTimeout(() => {
+    char.style.transition = 'opacity 0.9s, transform 0.9s';
+    char.style.transform = 'translateX(calc(-50% + 80px))';
+    char.style.opacity = '0';
+    char.offsetHeight;
+    requestAnimationFrame(() => {
+      char.style.transform = 'translateX(-50%)';
+      char.style.opacity = '1';
+    });
+    setTimeout(() => {
+      currentScript = script3;
+      lineIdx = 0;
+      cocktailMade = false;
+      advance();
+    }, 950);
+  }, 800);
+}
+
+function openCocktail() {
+  const ui = document.getElementById('cocktail-ui');
+  ui.classList.add('show');
+  selectedBase = null; selectedFlavor = null;
+  document.getElementById('shake-btn').style.display = 'none';
+  document.getElementById('cocktail-result').style.display = 'none';
+  document.getElementById('close-cocktail').style.display = 'none';
+
+  const baseRow = document.getElementById('base-row');
+  const flavorRow = document.getElementById('flavor-row');
+  baseRow.innerHTML = '';
+  flavorRow.innerHTML = '';
+
+  bases.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'ing-btn';
+    btn.textContent = b;
+    btn.onclick = () => {
+      document.querySelectorAll('#base-row .ing-btn').forEach(x => x.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedBase = b;
+      checkShake();
+    };
+    baseRow.appendChild(btn);
+  });
+  flavors.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'ing-btn';
+    btn.textContent = f;
+    btn.onclick = () => {
+      document.querySelectorAll('#flavor-row .ing-btn').forEach(x => x.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedFlavor = f;
+      checkShake();
+    };
+    flavorRow.appendChild(btn);
+  });
+}
+
+function checkShake() {
+  if (selectedBase && selectedFlavor) {
+    document.getElementById('shake-btn').style.display = 'block';
+  }
+}
+
+function shakeCocktail() {
+  const key = selectedBase + selectedFlavor;
+  const name = cocktailNames[key] || (selectedBase + '×' + selectedFlavor + '特調');
+  document.getElementById('cocktail-result').style.display = 'block';
+  document.getElementById('cocktail-result').textContent = '✨ 完成：「' + name + '」';
+  document.getElementById('shake-btn').style.display = 'none';
+  document.getElementById('close-cocktail').style.display = 'block';
+  cocktailMade = true;
+}
+
+function closeCocktail() {
+  document.getElementById('cocktail-ui').classList.remove('show');
+  mixingBtn.style.display = 'none';
+  currentScript = isPhase4 ? script4 : script2;
+  lineIdx = 0;
+  advance();
+}
+
+function spawnHearts() {
+  const scene = document.getElementById('scene');
+  for (let i = 0; i < 3; i++) {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = ['♥','♡','💕'][i % 3];
+    h.style.left = (80 + Math.random() * 180) + 'px';
+    h.style.top = (200 + Math.random() * 80) + 'px';
+    h.style.animationDelay = (i * 0.2) + 's';
+    scene.appendChild(h);
+    setTimeout(() => h.remove(), 1800);
+  }
+}
+
+startGame();
+</script>
